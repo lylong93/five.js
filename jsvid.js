@@ -1,16 +1,16 @@
-(function(global) {
-    const ACTION_TYPE_ATTRIBUTE = 1;    //动作类型 修改元素属性
+(function (global) {
+    const ACTION_TYPE_ATTRIBUTE = 1; //动作类型 修改元素属性
 
     /**
      * dom和actions可JSON.stringify()序列化后传递到后台
      */
     function JSVideo() {
         this.id = 1;
-        this.idMap = new Map();         //唯一标识和元素之间的映射
+        this.idMap = new Map(); //唯一标识和元素之间的映射
         this.dom = this.serialization(document.documentElement);
-        console.log("序列化", this.dom);
-        console.log("map", this.idMap);
-        this.actions = [];              //动作日志
+        // console.log("序列化", this.dom);
+        // console.log("map", this.idMap);
+        this.actions = []; //动作日志
         this.observer();
         this.observerInput();
     }
@@ -20,7 +20,7 @@
          */
         serialization(parent) {
             let element = this.parseElement(parent);
-            if(parent.children.length == 0) {
+            if (parent.children.length == 0) {
                 parent.textContent && (element.textContent = parent.textContent);
                 return element;
             }
@@ -34,12 +34,15 @@
          */
         parseElement(element, id) {
             let attributes = {};
-            for (const { name, value } of Array.from(element.attributes)) {
+            for (const {
+                    name,
+                    value
+                } of Array.from(element.attributes)) {
                 attributes[name] = value;
             }
-            if(!id) {   //解析新元素才做映射
+            if (!id) { //解析新元素才做映射
                 id = this.getID();
-                this.idMap.set(element, id);    //元素为键，ID为值
+                this.idMap.set(element, id); //元素为键，ID为值
             }
             return {
                 children: [],
@@ -53,7 +56,7 @@
          */
         deserialization(obj) {
             let element = this.createElement(obj);
-            if(obj.children.length == 0) {
+            if (obj.children.length == 0) {
                 return element;
             }
             obj.children.forEach(child => {
@@ -66,8 +69,8 @@
          */
         createElement(obj) {
             let element = document.createElement(obj.tagName);
-            if(obj.id) {
-                this.idMap.set(obj.id, element);        //ID为键，元素为值
+            if (obj.id) {
+                this.idMap.set(obj.id, element); //ID为键，元素为值
             }
             for (const name in obj.attributes) {
                 element.setAttribute(name, obj.attributes[name]);
@@ -92,21 +95,26 @@
          */
         observer() {
             const ob = new MutationObserver(mutations => {
-                console.log(mutations);
+                // console.log(mutations);
                 mutations.forEach(mutation => {
-                    const { type, target, oldValue, attributeName} = mutation;
+                    const {
+                        type,
+                        target,
+                        oldValue,
+                        attributeName
+                    } = mutation;
                     switch (type) {
                         case 'attributes':
                             const value = target.getAttribute(attributeName);
-                            console.log("attributes", value);
+                            // console.log("attributes", value);
                             this.setAttributeAction(target);
                     }
                 });
             });
             ob.observe(document, {
-                attributes: true,           //监控目标属性的改变
-                attributeOldValue: true,    //记录改变前的目标属性值
-                subtree: true,              //目标以及目标的后代改变都会监控
+                attributes: true, //监控目标属性的改变
+                attributeOldValue: true, //记录改变前的目标属性值
+                subtree: true, //目标以及目标的后代改变都会监控
                 //characterData: true,        //监控目标数据的改变
                 //characterDataOldValue: true,
                 //childList: true,
@@ -121,23 +129,24 @@
                 _this = this;
             //监控通过代码更新的value属性
             Object.defineProperty(HTMLInputElement.prototype, "value", {
-                    set(value) {
-                        console.log("defineProperty", value);
-                        setTimeout(() => {
-                            _this.setAttributeAction(this);     //异步调用，避免阻塞页面
-                        }, 0);
-                        original.set.call(this, value);         //执行原来的set逻辑
-                    }
+                set(value) {
+                    // console.log("defineProperty", value);
+                    setTimeout(() => {
+                        _this.setAttributeAction(this); //异步调用，避免阻塞页面
+                    }, 0);
+                    original.set.call(this, value); //执行原来的set逻辑
                 }
-            );
+            });
             //捕获input事件
             document.addEventListener("input", (event) => {
-                const { target } = event;
+                const {
+                    target
+                } = event;
                 let text = target.value;
-                console.log("input", text);
+                // console.log("input", text);
                 this.setAttributeAction(target);
             }, {
-                capture: true      //捕获
+                capture: true //捕获
             });
         },
         /**
@@ -156,14 +165,15 @@
         setAction(element, otherParam = {}) {
             //由于element是对象，因此Map中的key会自动更新
             const id = this.idMap.get(element);
-            console.log("idMap", id, element);
+            // console.log("idMap", id, element);
             const action = Object.assign(
-                this.parseElement(element, id),
-                { timestamp: Date.now() },
+                this.parseElement(element, id), {
+                    timestamp: Date.now()
+                },
                 otherParam
             );
             this.actions.push(action);
-            console.log("actions", this.actions);
+            // console.log("actions", this.actions);
         },
         getActions() {
             return this.actions;
@@ -172,24 +182,25 @@
          * 回放
          */
         replay() {
-            if(this.actions.length == 0)
+            console.log('dddd',this.actions)
+            if (this.actions.length == 0)
                 return;
-            console.log("new idMap", this.idMap, this.actions);
-            const timeOffset = 16.7;                    //一帧的时间间隔大概为16.7ms
-            let startTime = this.actions[0].timestamp;  //开始时间戳
+            // console.log("new idMap", this.idMap, this.actions);
+            const timeOffset = 16.7; //一帧的时间间隔大概为16.7ms
+            let startTime = this.actions[0].timestamp; //开始时间戳
             const state = () => {
                 const action = this.actions[0];
                 let element = this.idMap.get(action.id);
-                if(!element) {      //取不到的元素直接停止动画
+                if (!element) { //取不到的元素直接停止动画
                     return;
                 }
                 //console.log("state action", action, this.actions.length);
-                if(startTime >= action.timestamp) {
+                if (startTime >= action.timestamp) {
                     this.actions.shift();
                     switch (action.type) {
                         case ACTION_TYPE_ATTRIBUTE:
-                            console.log("replay", action.id, element);
-                            for (const name in action.attributes) {             //更新属性
+                            // console.log("replay", action.id, element);
+                            for (const name in action.attributes) { //更新属性
                                 element.setAttribute(name, action.attributes[name]);
                             }
                             //触发defineProperty拦截，拆分成两个插件会避免该问题
@@ -197,9 +208,9 @@
                             break;
                     }
                 }
-                startTime += timeOffset;        //最大程度的模拟真实的时间差
-                console.log(this.actions.length, action.id, startTime);
-                if(this.actions.length > 0)     //当还有动作时，继续调用requestAnimationFrame()
+                startTime += timeOffset; //最大程度的模拟真实的时间差
+                // console.log(this.actions.length, action.id, startTime);
+                if (this.actions.length > 0) //当还有动作时，继续调用requestAnimationFrame()
                     requestAnimationFrame(state);
             };
             state();
@@ -217,25 +228,27 @@
             iframe.onload = () => {
                 const doc = iframe.contentDocument,
                     root = doc.documentElement,
-                    html = this.deserialization(this.dom);      //反序列化
+                    html = this.deserialization(this.dom); //反序列化
                 //根元素属性附加
-                for (const { name, value } of Array.from(html.attributes)) {
+                for (const {
+                        name,
+                        value
+                    } of Array.from(html.attributes)) {
                     root.setAttribute(name, value);
                 }
-                root.removeChild(root.firstElementChild);       //移除head
-                root.removeChild(root.firstElementChild);       //移除body
+                root.removeChild(root.firstElementChild); //移除head
+                root.removeChild(root.firstElementChild); //移除body
                 Array.from(html.children).forEach(child => {
-                    console.log('哈哈哈',child)
+                    console.log('哈哈哈', child)
                     root.appendChild(child);
                 });
                 //加个定时器只是为了查看方便
                 setTimeout(() => {
                     this.replay();
-                }, 5000);
+                }, 500);
             };
             document.body.appendChild(iframe);
         }
     };
     global.JSVideo = JSVideo;
 })(window);
-
