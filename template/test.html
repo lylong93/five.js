@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style type="text/css">
+        .btn {
+            border: 1px solid red;
+            width: 100px;
+            height: 100px;
+        }
+    </style>
+</head>
+<script src="bundle.js"></script>
+
+<body>
+    <div class="btn" id="btn">点击</div>
+
+
+    <script type="text/javaScript">
+        const config = {
+            mode: 'dev'
+        }
+        window.createFive(config)
+
+
+        const odiv = document.getElementById("btn")
+        
+       
+        odiv.addEventListener('click',data=> {
+            console.log('dddd',data)
+
+            const myp =  new Promise((resolve, reject)=> {
+                reject()
+            })
+            myp.then( val=> {
+                console.log(val)
+            })
+
+            throw new Error("提示文字")
+        })
+
+    
+
+    </script>
+</body>
+
+</html>
